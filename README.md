@@ -1,4 +1,6 @@
 # Migration-visualisation
 
 ``` python -m flask run```
-<img width="1371" alt="Screenshot 2022-03-16 at 3 29 30 AM" src="https://user-images.githubusercontent.com/44060481/158479618-0ac0cfe0-1967-4270-91ec-a30ec5a48ba3.png">
+
+
+![Screenshot 2022-04-18 at 7 53 52 PM](https://user-images.githubusercontent.com/44060481/163822169-21e6b6b1-bd42-4b6b-9a22-bc7d5de9beed.png)
