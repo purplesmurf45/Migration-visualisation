@@ -2,12 +2,12 @@
     margin-top: 3px;
     margin-right: 10px;
     vertical-align: top;
-    color: #7fafdf;
+    color: #001E6C;
     float: right;
-    border-color: #7fafdf;
+    border-color: #001E6C;
 }
 
 .link-button:hover {
-    color: white;
-    border-color: white;
+    color: skyblue;
+    border-color: skyblue;
 }

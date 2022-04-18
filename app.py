@@ -1,6 +1,7 @@
 import os
 import pathlib
 import re
+from tkinter.tix import Select
 
 import dash
 from dash import dcc
@@ -33,6 +34,10 @@ df_od = pd.read_csv('https://raw.githubusercontent.com/purplesmurf45/Migration-v
 
 df_refugees = pd.read_csv(
     "https://raw.githubusercontent.com/purplesmurf45/Migration-visualisation/main/data/country_codes.csv"
+)
+
+df_refugees_out = pd.read_csv(
+    "https://raw.githubusercontent.com/purplesmurf45/Migration-visualisation/main/data/outflow_country_codes.csv"
 )
 
 
@@ -86,12 +91,35 @@ app.layout = html.Div(
                                     marks={
                                         str(year): {
                                             # "label":,
-                                            "style": {"color": "#7fafdf"},
+                                            "style": {"color": "#001E6C"},
                                         }
                                         for year in YEARS
                                     },
                                 ),
                             ],
+                        ),
+                        html.Div(
+                            id="flow-container",
+                            children=[
+                                html.P(
+                                    "Select inflow/outflow",
+                                    id="flow-button-title",
+                                ),
+                                dcc.RadioItems(
+                                    id="chart-type",
+                                            options=[
+                                                {"label": "Inflow", "value": "in"},
+                                                {
+                                                    "label": "Outflow",
+                                                    "value": "out",
+                                                },
+                                            ],
+                                            value="in",
+                                            labelStyle = {'display': 'block', 'cursor': 'pointer', 'margin-left':'20px'},
+                                            inline=True
+                                    ),
+
+                            ]
                         ),
                         html.Div(
                             id="heatmap-container",
@@ -119,6 +147,7 @@ app.layout = html.Div(
                     id="graph-container",
                     children=[
                         html.P(id="chart-selector", children="Select chart:"),
+                        
                         dcc.Dropdown(
                             options=[
                                 {
@@ -136,6 +165,11 @@ app.layout = html.Div(
                             ],
                             value="Bar Chart",
                             id="chart-dropdown",
+                            # children="This is a viz32re"
+                        ),
+                        html.P(
+                            id="viz-desc",
+                            children="NOTE: If choosing Sankey Diagram, choosing too many countries at a time is not adviced here. This is due to exponential increase in visualization complexity."
                         ),
                         dcc.Graph(
                             id="selected-data",
@@ -156,25 +190,45 @@ app.layout = html.Div(
     ],
 )
 
+# @app.callback(
+#     Output("viz-desc", "desc"),
+#     [Input("chart-dropdown", "value")],
+#     [State("viz-desc", "desc")],
+# )
+
+# def update_desc (option, desc):
+#     if option == "Bar Chart":
+#         desc = "This is a bar chart"
+#     elif option == "Sankey Diagram":
+#         desc = "This is a Sankey diagram"
+#     else:
+#         desc = "This is a Node-link diagram"
+#     return desc
 
 @app.callback(
     Output("country-choropleth", "figure"),
-    [Input("years-slider", "value")],
+    [Input("years-slider", "value"), Input("chart-type", "value")],
     [State("country-choropleth", "figure")],
 )
 
-def display_map(year, figure):
-    df_temp = df_refugees[df_refugees['Year'] == year]
+def display_map(year, type ,figure):
+    if (type == "in"):
+        df_temp = df_refugees[df_refugees['Year'] == year]
+        val = df_temp['Destination']
+    else:
+        df_temp = df_refugees_out[df_refugees_out['Year'] == year]
+        val = df_temp['Origin']
+    # print(type)
     fig = go.Figure(data=go.Choropleth(
     locations = df_temp['CODE'],
     z = np.log10(df_temp['Refugees']),
     zmin = 0,
     zmax = 6.6,
-    text = df_temp['Destination'],
+    text = val,
     colorscale = 'tealrose',
     autocolorscale=False,
     reversescale=True,
-    marker_line_color="#2cfec1",
+    marker_line_color="#001E6C",        #mint
     marker_line_width=0.2,
     # colorbar_tickprefix = '$',
     colorbar_title = 'Number of<br>Immigrants',
@@ -199,7 +253,7 @@ def display_map(year, figure):
             showarrow=False,
             align="right",
             text="Number of <br>Immigrants",
-            font=dict(color="#2cfec1"),
+            font=dict(color="#001E6C"),
             bgcolor="#1f2630",
             x=1.4,
             y=1.4,
@@ -208,13 +262,13 @@ def display_map(year, figure):
     )
     fig.update_geos(bgcolor="rgba(0,0,0,0)")
     fig_layout = fig["layout"]
-    fig_layout["paper_bgcolor"] = "#1f2630"
-    fig_layout["plot_bgcolor"] = "#1f2630"
-    fig_layout["font"]["color"] = "#2cfec1"
+    # fig_layout["paper_bgcolor"] = "#1f2630"
+    # fig_layout["plot_bgcolor"] = "#1f2630"
+    fig_layout["font"]["color"] = "#001E6C"
     fig_layout["title"] = ""
-    fig_layout["title"]["font"]["color"] = "#2cfec1"
-    fig_layout["xaxis"]["tickfont"]["color"] = "#2cfec1"
-    fig_layout["yaxis"]["tickfont"]["color"] = "#2cfec1"
+    fig_layout["title"]["font"]["color"] = "#001E6C"
+    fig_layout["xaxis"]["tickfont"]["color"] = "#001E6C"
+    fig_layout["yaxis"]["tickfont"]["color"] = "#001E6C"
     fig_layout["xaxis"]["gridcolor"] = "#5b5b5b"
     fig_layout["yaxis"]["gridcolor"] = "#5b5b5b"
     return fig
@@ -246,7 +300,7 @@ def get_trace (graph, nodes, edges, node_length):
                             hovertext = node_hover,
                             ids = nodes,
                             marker = dict(  showscale = True,
-                                            colorscale = 'jet',
+                                            colorscale = 'tealrose',
                                             reversescale = True,
                                             size = 10,
                                             colorbar = dict(
@@ -284,7 +338,7 @@ def get_node_link_diagram(graph, nodes, edges, node_length):
     #   print("***************")
   node_trace.text = node_adjacencies   
   node_trace.marker.color = node_adjacencies
-  node_trace.marker.size = node_adjacencies
+  node_trace.marker.size = 5
   fig = go.Figure(  data = [edge_trace, node_trace],
                     layout = go.Layout(
                         # title = "Connectivity betweeen co",
@@ -305,17 +359,18 @@ def get_node_link_diagram(graph, nodes, edges, node_length):
         Input("country-choropleth", "selectedData"),
         Input("chart-dropdown", "value"),
         Input("years-slider", "value"),
+        Input("chart-type", "value")
     ],
 )
-def display_selected_data(selectedData, chart_dropdown, year):
+def display_selected_data(selectedData, chart_dropdown, year, type):
     if selectedData is None:
         return dict(
             data=[dict(x=0, y=0)],
             layout=dict(
                 title="Click-drag on the map to select countries",
-                paper_bgcolor="#1f2630",
-                plot_bgcolor="#1f2630",
-                font=dict(color="#2cfec1"),
+                # paper_bgcolor="#1f2630",
+                # plot_bgcolor="#1f2630",
+                font=dict(color="#001E6C"),
                 margin=dict(t=75, r=50, b=100, l=75),
             ),
         )
@@ -323,8 +378,14 @@ def display_selected_data(selectedData, chart_dropdown, year):
     # print(pts)
     locations = [pt["text"] for pt in pts]
     # print(locations)
-    dff = df_refugees
-    dff = dff[dff["Destination"].isin(locations)]
+    if type == "in":
+        dff = df_refugees
+        dff = dff[dff["Destination"].isin(locations)]
+        val = "Destination"
+    else:
+        dff = df_refugees_out
+        dff = dff[dff["Origin"].isin(locations)]
+        val = "Origin"
 
     if chart_dropdown != "death_rate_all_time":
         title = "Refugees in year <b>{0}</b>".format(year)
@@ -336,7 +397,7 @@ def display_selected_data(selectedData, chart_dropdown, year):
             AGGREGATE_BY = "Refugees"
             KIND = "bar"
             dff[AGGREGATE_BY] = pd.to_numeric(dff[AGGREGATE_BY], errors="coerce")
-            deaths_or_rate_by_fips = dff.groupby("Destination")[AGGREGATE_BY].sum()
+            deaths_or_rate_by_fips = dff.groupby(val)[AGGREGATE_BY].sum()
             deaths_or_rate_by_fips = deaths_or_rate_by_fips.sort_values()
 
             # Only look at non-zero rows:
@@ -348,14 +409,14 @@ def display_selected_data(selectedData, chart_dropdown, year):
             fig_layout = fig["layout"]
 
             fig_data[0]["text"] = deaths_or_rate_by_fips.values.tolist()
-            fig_data[0]["marker"]["color"] = "#2cfec1"
+            fig_data[0]["marker"]["color"] = "#001E6C"
             fig_data[0]["marker"]["opacity"] = 1
             fig_data[0]["marker"]["line"]["width"] = 0
             fig_data[0]["textposition"] = "outside"
             
         elif "Sankey Diagram" == chart_dropdown:
             dff = df_od
-            dff = dff[dff["Destination"].isin(locations)]
+            dff = dff[dff[val].isin(locations)]
             dff = dff[dff.Year == year]
             title = "Refugees in the year, <b>{0}</b>".format(year)
             fig = go.Figure(data=[go.Sankey(
@@ -372,9 +433,10 @@ def display_selected_data(selectedData, chart_dropdown, year):
             value = dff['Refugees'],
         ))])
             fig["layout"]["title"] = "Migration flow between countries in the year <b>{0}</b>".format(year)
+            fig["layout"]["plot_bgcolor"] = "#1f2630"
         elif "Node-link Diagram" == chart_dropdown:
             dff = df_od
-            dff = dff[dff["Destination"].isin(locations)]
+            dff = dff[dff[val].isin(locations)]
             dff = dff[dff.Year == year]
             # nodes = dff["Destination"]+ dff["Origin"]
             # nodes = list(set(nodes))
@@ -401,12 +463,12 @@ def display_selected_data(selectedData, chart_dropdown, year):
 
 
         fig_layout = fig["layout"]
-        fig_layout["paper_bgcolor"] = "#1f2630"
-        fig_layout["plot_bgcolor"] = "#1f2630"
-        fig_layout["font"]["color"] = "#2cfec1"
-        fig_layout["title"]["font"]["color"] = "#2cfec1"
-        fig_layout["xaxis"]["tickfont"]["color"] = "#2cfec1"
-        fig_layout["yaxis"]["tickfont"]["color"] = "#2cfec1"
+        # fig_layout["paper_bgcolor"] = "#1f2630"
+        # fig_layout["plot_bgcolor"] = "#1f2630"
+        fig_layout["font"]["color"] = "#001E6C"
+        fig_layout["title"]["font"]["color"] = "#001E6C"
+        fig_layout["xaxis"]["tickfont"]["color"] = "#001E6C"
+        fig_layout["yaxis"]["tickfont"]["color"] = "#001E6C"
         fig_layout["xaxis"]["gridcolor"] = "#5b5b5b"
         fig_layout["yaxis"]["gridcolor"] = "#5b5b5b"
         fig_layout["margin"]["t"] = 75
