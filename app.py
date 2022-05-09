@@ -454,4 +454,4 @@ def display_selected_data(selectedData, chart_dropdown, year, type):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    server.run()
