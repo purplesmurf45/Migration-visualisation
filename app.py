@@ -1,7 +1,4 @@
-import os
 import pathlib
-import re
-from tkinter.tix import Select
 
 import dash
 from dash import dcc
@@ -218,7 +215,6 @@ def display_map(year, type ,figure):
     else:
         df_temp = df_refugees_out[df_refugees_out['Year'] == year]
         val = df_temp['Origin']
-    # print(type)
     fig = go.Figure(data=go.Choropleth(
     locations = df_temp['CODE'],
     z = np.log10(df_temp['Refugees']),
@@ -230,21 +226,16 @@ def display_map(year, type ,figure):
     reversescale=True,
     marker_line_color="#001E6C",        #mint
     marker_line_width=0.2,
-    # colorbar_tickprefix = '$',
-    colorbar_title = 'Number of<br>Immigrants',
+    colorbar_title = 'Number of<br>Refugees',
 ))
 
     fig.update_layout(
-        # title_text='Country-wise immigrants',
         geo=dict(
             showframe=False,
             showcoastlines=False,
             projection_type='equirectangular',
             
         ),
-        # auto_size = True,
-        # height=370, 
-        # width=1500,
         margin={"r":0,"t":0,"l":0,"b":0},
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -252,7 +243,7 @@ def display_map(year, type ,figure):
         dict(
             showarrow=False,
             align="right",
-            text="Number of <br>Immigrants",
+            text="Number of <br>Refugees",
             font=dict(color="#001E6C"),
             bgcolor="#1f2630",
             x=1.4,
@@ -262,8 +253,6 @@ def display_map(year, type ,figure):
     )
     fig.update_geos(bgcolor="rgba(0,0,0,0)")
     fig_layout = fig["layout"]
-    # fig_layout["paper_bgcolor"] = "#1f2630"
-    # fig_layout["plot_bgcolor"] = "#1f2630"
     fig_layout["font"]["color"] = "#001E6C"
     fig_layout["title"] = ""
     fig_layout["title"]["font"]["color"] = "#001E6C"
@@ -329,25 +318,16 @@ def get_node_link_diagram(graph, nodes, edges, node_length):
   node_trace, edge_trace = get_trace (graph, nodes, edges, node_length)
   node_adjacencies = []
   node_text = []
-#   print(enumerate(graph.adjacency()))
   for node, adjacencies in enumerate(graph.adjacency()):
-    #   print(adjacencies)
       node_adjacencies.append(len(adjacencies[1]))
-    #   print(node)
       node_text.append(node)
-    #   print("***************")
   node_trace.text = node_adjacencies   
   node_trace.marker.color = node_adjacencies
   node_trace.marker.size = 5
   fig = go.Figure(  data = [edge_trace, node_trace],
                     layout = go.Layout(
-                        # title = "Connectivity betweeen co",
-                        # titlefont_size = 20,
-                        # width = 1000,
-                        # height = 500,
                         showlegend = False,
                         hovermode = 'closest',
-                        # margin = dict(b = 5, l = 5, r = 5, t = 5),
                         xaxis = dict(showgrid = False, zeroline = False, showticklabels = False),
                         yaxis = dict(showgrid = False, zeroline = False, showticklabels = False))
                         )
@@ -397,18 +377,18 @@ def display_selected_data(selectedData, chart_dropdown, year, type):
             AGGREGATE_BY = "Refugees"
             KIND = "bar"
             dff[AGGREGATE_BY] = pd.to_numeric(dff[AGGREGATE_BY], errors="coerce")
-            deaths_or_rate_by_fips = dff.groupby(val)[AGGREGATE_BY].sum()
-            deaths_or_rate_by_fips = deaths_or_rate_by_fips.sort_values()
+            refugee_agg = dff.groupby(val)[AGGREGATE_BY].sum()
+            refugee_agg = refugee_agg.sort_values()
 
             # Only look at non-zero rows:
-            deaths_or_rate_by_fips = deaths_or_rate_by_fips[deaths_or_rate_by_fips > 0]
-            fig = deaths_or_rate_by_fips.iplot(
+            refugee_agg = refugee_agg[refugee_agg > 0]
+            fig = refugee_agg.iplot(
                 kind=KIND, y=AGGREGATE_BY, title=title, asFigure=True
             )
             fig_data = fig["data"]
             fig_layout = fig["layout"]
 
-            fig_data[0]["text"] = deaths_or_rate_by_fips.values.tolist()
+            fig_data[0]["text"] = refugee_agg.values.tolist()
             fig_data[0]["marker"]["color"] = "#001E6C"
             fig_data[0]["marker"]["opacity"] = 1
             fig_data[0]["marker"]["line"]["width"] = 0
@@ -438,8 +418,6 @@ def display_selected_data(selectedData, chart_dropdown, year, type):
             dff = df_od
             dff = dff[dff[val].isin(locations)]
             dff = dff[dff.Year == year]
-            # nodes = dff["Destination"]+ dff["Origin"]
-            # nodes = list(set(nodes))
             nodes = []
             edges = []
             for i in range(len(dff)):
@@ -447,8 +425,6 @@ def display_selected_data(selectedData, chart_dropdown, year, type):
                 nodes.append(dff.iloc[i]["Origin"]) 
                 edges.append((dff.iloc[i]["Destination"],dff.iloc[i]["Origin"]))
             nodes = list(set(nodes))
-            # print(nodes)
-            # node_length = len(nodes)
             #initializing graph and adding nodes and edges to it
             graph = nx.Graph()
             for node in nodes:
@@ -456,8 +432,6 @@ def display_selected_data(selectedData, chart_dropdown, year, type):
             for edge in edges:
                 graph.add_edge(*edge)
             node_length = len(nodes)
-            # print(node_length)
-            # print(len(graph.nodes))
             fig = get_node_link_diagram(graph, nodes, edges, node_length)
             fig["layout"]["title"] = "Connectivity between countries in the year <b>{0}</b>".format(year)
 
